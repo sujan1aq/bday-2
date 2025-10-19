@@ -158,7 +158,6 @@
     let currentIndexTitle = 0;
     let date__of__birth = document.querySelector(".date__of__birth span");
     let text__letter = document.querySelector(".text__letter p");
-    let audio = document.getElementById("birthdaySong");
     setTimeout(function(){
         timeDatetxt = setInterval(function(){
             if(currentIndex < charArrDate.length){
@@ -179,10 +178,6 @@
     var intervalTitle;
     $("#btn__letter").on("click", function(){
         $("#btn__letter").on("click", function(){
-    // Add these 4 lines here
-            if(audio) {
-                audio.currentTime = 190; // 3min 10s = 190 seconds
-                audio.play();
         $(".box__letter").slideDown()
         setTimeout(function(){
             $(".letter__border").slideDown();
