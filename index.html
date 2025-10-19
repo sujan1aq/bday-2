@@ -147,17 +147,27 @@
     
 </body>
 <script>
+    // Edit these values if needed
     let datetxt = "30/10/2009";
-    let datatxtletter = "My love. You are a very special girl. I always silently thank you for coming into my life. Today, I wish you all the best, lots of health, and lots of joy. I always hope we will celebrate many more birthdays like this together. Happy birthday to you.💕";
+    // Put your full letter text between the backticks below.
+    // If your original file already has a long string, copy it here.
+    let datatxtletter = `My love. You are a very special girl. I always silently thank you for coming into my life. Today, I wish you all the best, lots of health, and lots of joy. I always hope ... (paste full letter here)`;
     let titleLetter = "To you";
+
+    // split characters for typing effect
     let charArrDate = datetxt.split('');
     let charArrDateLetter = datatxtletter.split('');
     let charArrTitle = titleLetter.split('');
     let currentIndex = 0;
     let currentIndexLetter = 0;
     let currentIndexTitle = 0;
+
+    // DOM references
     let date__of__birth = document.querySelector(".date__of__birth span");
     let text__letter = document.querySelector(".text__letter p");
+
+    // typing the date after 12s (unchanged)
+    let timeDatetxt;
     setTimeout(function(){
         timeDatetxt = setInterval(function(){
             if(currentIndex < charArrDate.length){
@@ -166,71 +176,162 @@
             }
             else{
                 let i = document.createElement("i");
-                i.className = "fa-solid fa-star"
-                document.querySelector(".date__of__birth").prepend(i)
-                document.querySelector(".date__of__birth").appendChild(i.cloneNode(true))
-                clearInterval(timeDatetxt)
+                i.className = "fa-solid fa-star";
+                document.querySelector(".date__of__birth").prepend(i);
+                document.querySelector(".date__of__birth").appendChild(i.cloneNode(true));
+                clearInterval(timeDatetxt);
             }
-        },100)
-    },12000)
+        },100);
+    },12000);
 
-    var intervalContent;
-    var intervalTitle;
+    // audio segment player
+    const audio = document.getElementById("birthdaySong");
+    const segmentStart = 190; // 3 min 10 sec in seconds
+    const segmentEnd = 240;   // 4 min in seconds
+    let segmentLoopHandler = null;
+    let segmentLoadedHandler = null;
+    let intervalContent = null;
+    let intervalTitle = null;
+
+    function startSegmentLoop() {
+        if (!audio) return;
+
+        // remove previous handlers if any
+        if (segmentLoopHandler) {
+            audio.removeEventListener("timeupdate", segmentLoopHandler);
+            segmentLoopHandler = null;
+        }
+        if (segmentLoadedHandler) {
+            audio.removeEventListener("loadedmetadata", segmentLoadedHandler);
+            segmentLoadedHandler = null;
+        }
+
+        // loop handler: when passing end, jump back to start
+        segmentLoopHandler = function () {
+            // use a small epsilon to avoid precision issues
+            if (audio.currentTime >= segmentEnd - 0.05) {
+                audio.currentTime = segmentStart;
+                audio.play().catch(()=>{});
+            }
+        };
+        audio.addEventListener("timeupdate", segmentLoopHandler);
+
+        const playNow = function () {
+            try {
+                // try to seek to start of segment
+                audio.currentTime = segmentStart;
+            } catch (e) {
+                // some browsers throw if seeking before metadata loaded
+            }
+            // play (allowed because this function runs on a user click)
+            audio.play().catch(()=>{});
+        };
+
+        // If metadata already loaded, play immediately; otherwise wait
+        if (audio.readyState > 0) {
+            playNow();
+        } else {
+            segmentLoadedHandler = function () {
+                audio.removeEventListener("loadedmetadata", segmentLoadedHandler);
+                segmentLoadedHandler = null;
+                playNow();
+            };
+            audio.addEventListener("loadedmetadata", segmentLoadedHandler);
+        }
+    }
+
+    function stopSegmentLoop() {
+        if (!audio) return;
+        audio.pause();
+        try { audio.currentTime = 0; } catch(e){}
+        if (segmentLoopHandler) {
+            audio.removeEventListener("timeupdate", segmentLoopHandler);
+            segmentLoopHandler = null;
+        }
+        if (segmentLoadedHandler) {
+            audio.removeEventListener("loadedmetadata", segmentLoadedHandler);
+            segmentLoadedHandler = null;
+        }
+    }
+
+    // Single click handler (fixed — removed nested handlers)
     $("#btn__letter").on("click", function(){
-        $(".box__letter").slideDown()
+        // Start the audio segment loop on the user click
+        startSegmentLoop();
+
+        // show the letter box and run the existing animations / typing
+        $(".box__letter").slideDown();
+
         setTimeout(function(){
             $(".letter__border").slideDown();
-        },1000)
+        },1000);
+
         setTimeout(function(){
+            // title typing
             intervalTitle = setInterval(function(){
                 if(currentIndexTitle < charArrTitle.length){
                     document.querySelector(".title__letter").textContent += charArrTitle[currentIndexTitle];
                     let i = document.createElement("i");
-                    i.className = "fa-solid fa-heart"
-                    document.querySelector(".title__letter").appendChild(i)
+                    i.className = "fa-solid fa-heart";
+                    document.querySelector(".title__letter").appendChild(i);
                     currentIndexTitle++;
+                } else {
+                    clearInterval(intervalTitle);
                 }
-                else{
-                    clearInterval(intervalTitle)
-                }
-            },100)
-        },2000)
+            },100);
+        },2000);
+
         setTimeout(function(){
             document.querySelector("#heart__letter").classList.add("animationOp");
             document.querySelector(".love__img").classList.add("animationOp");
             document.querySelector("#mewmew").classList.add("animationOp");
-        },2800)
+        },2800);
+
         setTimeout(function(){
             document.querySelectorAll(".heart").forEach((item)=>{
-                item.classList.add("animation")
-            })
-        },3500)
+                item.classList.add("animation");
+            });
+        },3500);
+
         setTimeout(function(){
+            // content typing
             intervalContent = setInterval(function(){
                 if(currentIndexLetter < charArrDateLetter.length){
                     text__letter.textContent += charArrDateLetter[currentIndexLetter];
                     currentIndexLetter++;
+                } else {
+                    clearInterval(intervalContent);
                 }
-                else{
-                    clearInterval(intervalContent)
-                }
-            },50)
-        },6000)
-    })
+            },50);
+        },6000);
+    });
+
+    // Close handler — stop audio and reset states
     $(".close").on("click", function(){
-        clearInterval(intervalContent)
+        // stop audio loop immediately
+        stopSegmentLoop();
+
+        // cleanup typing / animation
+        if (intervalContent) {
+            clearInterval(intervalContent);
+            intervalContent = null;
+        }
+        if (intervalTitle) {
+            clearInterval(intervalTitle);
+            intervalTitle = null;
+        }
         document.querySelector(".title__letter").textContent = "";
         text__letter.textContent = "";
-        currentIndexLetter = 0
-        currentIndexTitle = 0
+        currentIndexLetter = 0;
+        currentIndexTitle = 0;
         document.querySelector("#heart__letter").classList.remove("animationOp");
         document.querySelector(".love__img").classList.remove("animationOp");
         document.querySelector("#mewmew").classList.remove("animationOp");
         document.querySelectorAll(".heart").forEach((item)=>{
-                item.classList.remove("animation")
-            })
+            item.classList.remove("animation");
+        });
+
         $(".box__letter").slideUp();
         $(".letter__border").slideUp();
-    })
+    });
 </script>
-</html>
